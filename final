@@ -1,0 +1,190 @@
+import re
+import tweepy
+from tweepy import OAuthHandler
+from textblob import TextBlob
+w = 0
+nmodi = []
+rgandhi = []
+bjp = []
+congress = []
+    
+ 
+class TwitterClient(object):
+    
+    
+    def __init__(self):
+        '''
+        Class constructor or initialization method.
+        '''
+        # keys and tokens from the Twitter Dev Console
+        consumer_key = 'B5E16z5kWbcb9e2AR4gTGZ7R8'
+        consumer_secret = 'IV6FEAoY3JQw8UcnHnNDF9dZ85QHXAfRVgjCEN3UZnBNhMMCm7'
+        access_token = '743130141136539649-Ir84tvFG8AaASGdObKieAHP508az75x'
+        access_token_secret = 'S7d7yoLEBvyiwgxQdzUMoOMqAJ8Sh23wqY5b9lYwSfleY'
+ 
+        # attempt authentication
+        try:
+            # create OAuthHandler object
+            self.auth = OAuthHandler(consumer_key, consumer_secret)
+            print(self.auth)
+            # set access token and secret
+            self.auth.set_access_token(access_token, access_token_secret)
+            # create tweepy API object to fetch tweets
+            self.api = tweepy.API(self.auth)
+        except:
+            print("Error: Authentication Failed")
+ 
+    def clean_tweet(self, tweet):
+        print(tweet)
+        '''
+        Utility function to clean tweet text by removing links, special characters
+        using simple regex statements.
+        '''
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+ 
+    def get_tweet_sentiment(self, tweet):
+        '''
+        Utility function to classify sentiment of passed tweet
+        using textblob's sentiment method
+        '''
+        # create TextBlob object of passed tweet text
+        analysis = TextBlob(self.clean_tweet(tweet))
+        # set sentiment
+        if analysis.sentiment.polarity > 0:
+            return 'positive'
+        elif analysis.sentiment.polarity == 0:
+            return 'neutral'
+        else:
+            return 'negative'
+ 
+    def get_tweets(self, query, count):
+        '''
+        Main function to fetch tweets and parse them.
+        '''
+        # empty list to store parsed tweets
+        tweets = []
+        
+ 
+        try:
+            city=["Amaravati","Itanagar","Dispur","Patna","Raipur","Panaji","Gandhinagar","Chandigarh","Shimla","Srinagar","Benaluru","Thiruvananthapuram","Bhopal","Mumbai","Imphal","Shillong","Aizawl","Kohima","Bhubaneswar","Chandigarh","Jaipur","Gangtok","Chennai","Hyderabad","Agartala","Lucknow","Dehradun","Kolkata","New Dehli"]    
+            lat= [20.9374,27.1,26.1433,25.5941,21.2514,15.4909,23.2156,30.7333,31.1048,34.0836,12.9716,8.5241,23.2599,19.076,24.817,25.5788,23.7271,25.6586,20.2961,30.7333,26.9124,27.3389,13.0827,17.385,23.8315,26.8467,30.3165,22.5726,28.7041]
+            lon= [77.7796,93.62,91.7898,85.1376,81.6296,73.8278,72.6369,76.7794,77.1734,74.7973,77.5946,76.9366,77.4126,72.8777,93.9368,91.8933,92.7176,94.1053,85.8245,76.7794,75.7873,88.6065,80.2707,78.4867,91.2868,80.9462,78.0322,88.3639,77.1025]
+            # call twitter api to fetch tweets
+            
+            
+            for i in range(29):
+               
+                fetched_tweets = self.api.search(q = query, count = count, since_id="201901010000", coordinates=[lat[i], lon[i], 100])
+                global w
+                
+                # parsing tweets one by one
+                for tweet in fetched_tweets:
+                    # empty dictionary to store required params of a tweet
+                    parsed_tweet = {}
+                    
+                    
+                    
+                
+ 
+                    # saving text of tweet
+                    parsed_tweet['text'] = tweet.text
+               
+                    # saving sentiment of tweet
+                    parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text)
+ 
+                    # appending parsed tweet to tweets list
+                    if tweet.retweet_count > 0:
+                        # if tweet has retweets, ensure that it is appended only once
+                        if parsed_tweet not in tweets:
+                            tweets.append(parsed_tweet)
+                    else:
+                        tweets.append(parsed_tweet)
+ 
+                # return parsed tweets
+                #return tweets
+                ptweets = [t for t in tweets if t['sentiment'] == 'positive']
+    # percentage of positive tweets
+                x=(100*len(ptweets)/len(tweets))
+                if w < 87:
+                    nmodi.append(x)
+                    w+=1
+                elif w >= 87 & w < 174:
+                    rgandhi.append(x)
+                    w+=1
+                elif w >=174 & w < 260:
+                    bjp.append(x)
+                    w+=1
+                else:
+                    congress.append(x)
+                    w+=1
+                    
+                print("Positive tweets percentage: {} %".format(100*len(ptweets)/len(tweets)))
+                
+    # picking negative tweets from tweets
+                ntweets = [t for t in tweets if t['sentiment'] == 'negative']
+    # percentage of negative tweets
+                y=(100*len(ntweets)/len(tweets))
+                print("Negative tweets percentage: {} %".format(100*len(ntweets)/len(tweets)))
+                if w < 87:
+                    nmodi.append(y)
+                    w+=1
+                elif w >= 87 & w < 174:
+                    rgandhi.append(y)
+                    w+=1
+                elif w >=174 & w < 260:
+                    bjp.append(y)
+                    w+=1
+                else:
+                    congress.append(y)
+                    w+=1
+    # percentage of neutral tweets
+                z=(100*(len(tweets) - len(ntweets) - len(ptweets))/len(tweets))
+                print("Neutral tweets percentage: {} %".format(100*(len(tweets) - len(ntweets) - len(ptweets))/len(tweets)))
+                if w < 87:
+                    nmodi.append(z)
+                    w+=1
+                elif w >= 87 & w < 174:
+                    rgandhi.append(z)
+                    w+=1
+                elif w >=174 & w < 260:
+                    bjp.append(z)
+                    w+=1
+                else:
+                    congress.append(z)
+                    w+=1
+    # printing first 5 positive tweets
+                print("\n\nPositive tweets:")
+                for tweet in ptweets[:10]:
+                    print(tweet['text'])
+ 
+    # printing first 5 negative tweets
+                print("\n\nNegative tweets:")
+                for tweet in ntweets[:10]:
+                    print(tweet['text'])
+            #return tweets
+    
+                
+    
+            
+        
+ 
+        except tweepy.TweepError as e:
+            # print error (if any)
+            print("Error : " + str(e))
+ 
+def main():
+    
+    # creating object of TwitterClient Class
+    api = TwitterClient()
+    
+    # calling function to get tweets
+       
+    tweets = api.get_tweets(query = 'Narendra Modi', count = 10000)
+    tweets = api.get_tweets(query = 'Rahul Gandhi', count = 10000)
+    tweets = api.get_tweets(query = 'BJP', count = 10000)
+    tweets = api.get_tweets(query = 'Congress', count = 10000)
+        
+ 
+if __name__ == "__main__":
+    # calling main function
+    main()
